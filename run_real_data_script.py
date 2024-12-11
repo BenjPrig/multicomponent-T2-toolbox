@@ -12,6 +12,7 @@ from plot.plot_mean_spectrum_slices import plot_mean_spectrum_slices
 import time
 import os
 import warnings
+import multiprocessing
 warnings.filterwarnings("ignore",category=FutureWarning)
 
 # ======================= Define input parameters ==============================
@@ -135,3 +136,6 @@ if savefig == 'yes':
 # end
 
 print("--- %s seconds ---" % (time.time() - start_time))
+
+if __name__ == "__main__":
+    multiprocessing.freeze_support()

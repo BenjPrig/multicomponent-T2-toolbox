@@ -48,7 +48,7 @@ def fitting_slice_FA_spline_method(Dic_3D_LR, Dic_3D, data_1d, mask_1d, alpha_va
                 residual = np.zeros((dim3))
                 for i in range(dim3):
                     Dic_i        = np.ascontiguousarray(Dic_3D_LR[:,:,i])
-                    f, rnorm_f   = nnls( Dic_i, M )
+                    f, rnorm_f   = nnls( Dic_i, M)
                     residual[i]  = rnorm_f
                 #end for iter
                 f2  = interp1d(alpha_values_spline, residual, kind='cubic')
@@ -59,7 +59,7 @@ def fitting_slice_FA_spline_method(Dic_3D_LR, Dic_3D, data_1d, mask_1d, alpha_va
                 tmp_FA[voxelx]       = alpha_values[indexFA]
                 # ------- estimate PD and T2 distribution
                 Dic_i          = np.ascontiguousarray(Dic_3D[:,:,indexFA])
-                fsol, f_sqrtn  = nnls( Dic_i, M )
+                fsol, f_sqrtn  = nnls( Dic_i, M)
                 km_i           = np.sum(fsol)
                 tmp_KM[voxelx] = km_i
                 tmp_Fsol       = tmp_Fsol + fsol
