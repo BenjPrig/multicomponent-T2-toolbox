@@ -34,7 +34,8 @@ import sys
 import os
 #sys.path.insert(1, os.path.dirname(inspect.getfile(scipy.optimize)))
 #import _nnls
-from scipy.optimize import _nnls,__nnls
+# from scipy.optimize import _nnls,__nnls
+from scipy.optimize import nnls
 
 import numba as nb
 
@@ -52,34 +53,34 @@ epsilon=1.0e-16
 # the estimation of smooth solutions.
 # The "too many iterations" error was removed.
 
-def nnls(A, b):
-    A, b = map(np.asarray_chkfinite, (A, b))
+# def nnls(A, b):
+#     A, b = map(np.asarray_chkfinite, (A, b))
 
-    #if len(A.shape) != 2:
-    #    raise ValueError("expected matrix")
-    #if len(b.shape) != 1:
-    #    raise ValueError("expected vector")
+#     #if len(A.shape) != 2:
+#     #    raise ValueError("expected matrix")
+#     #if len(b.shape) != 1:
+#     #    raise ValueError("expected vector")
 
-    m, n = A.shape
+#     m, n = A.shape
 
-    #if m != b.shape[0]:
-    #    raise ValueError("incompatible dimensions")
+#     #if m != b.shape[0]:
+#     #    raise ValueError("incompatible dimensions")
 
-    #maxiter = -1 if maxiter is None else int(maxiter)
-    maxiter = -1
-    #maxiter = int(5*n)
+#     #maxiter = -1 if maxiter is None else int(maxiter)
+#     maxiter = -1
+#     #maxiter = int(5*n)
 
-    w     = np.zeros((n,), dtype=np.double)
-    zz    = np.zeros((m,), dtype=np.double)
-    index = np.zeros((n,), dtype=int)
+#     w     = np.zeros((n,), dtype=np.double)
+#     zz    = np.zeros((m,), dtype=np.double)
+#     index = np.zeros((n,), dtype=int)
     
-    #x, rnorm, mode = _nnls.nnls(A, m, n, b, w, zz, index, maxiter)
-    x, rnorm, mode = __nnls.nnls(A, m, n, b, w, zz, index, maxiter)
+#     #x, rnorm, mode = _nnls.nnls(A, m, n, b, w, zz, index, maxiter)
+#     x, rnorm, mode = nnls(A, m, n, b, w, zz, index, maxiter)
 
-    #if mode != 1:
-    #    raise RuntimeError("too many iterations")
-    return x, rnorm
-#end
+#     #if mode != 1:
+#     #    raise RuntimeError("too many iterations")
+#     return x, rnorm
+# #end
 
 # ------------------------------------------------------------------------------
 #                                  L-CURVE
@@ -100,7 +101,7 @@ def nnls_lcurve_wrapper(D, y, Laplac_mod, lambda_reg):
         lambda_reg_i = lambda_reg[i_laplac]
         A  = np.concatenate( (D, np.sqrt(lambda_reg_i)*Laplac_mod) )
         # ---------------------  Standard NNLS - scipy -------------------------
-        x, rnorm = nnls(A, b)
+        x, rnorm = nnls(A, b,maxiter=-1)
         # ----------------------------------------------------------------------
         # Variables for the L-curve Method
         Log_error[i_laplac] = np.log( np.sum( ( np.dot(D, x) - y  )**2.0 )     + 1e-200)
@@ -125,7 +126,7 @@ def nnls_lcurve_wrapper_prior(D, y, L, x0, lambda_reg):
         A  = np.concatenate( (D, np.sqrt(lambda_reg_i) * L ) )
         b  = np.concatenate( (y, np.sqrt(lambda_reg_i) * x0) )
         # ---------------------  Standard NNLS - scipy -------------------------
-        x, rnorm = nnls(A, b)
+        x, rnorm = nnls(A, b,maxiter=-1)
         # ----------------------------------------------------------------------
         # Variables for the L-curve Method
         Log_error[i_laplac] = np.log( np.sum( ( np.dot(D, x) - y  )**2.0 ) + 1e-200)
@@ -143,7 +144,7 @@ def nnls_lcurve_wrapper_prior(D, y, L, x0, lambda_reg):
     # ----------------------------------------
     A  = np.concatenate( (D, np.sqrt(reg_opt) * L ) )
     b  = np.concatenate( (y, np.sqrt(reg_opt) * x0) )
-    x_sol, rnorm = nnls(A, b)
+    x_sol, rnorm = nnls(A, b,maxiter=-1)
     return x_sol, reg_opt
 #end fun
 
@@ -209,7 +210,7 @@ def scale_curve(x,y):
 #                        X2: conventional method of Mackay
 # ------------------------------------------------------------------------------
 def nnls_x2(Dic_i, M, Laplac, factor):
-    f0, kk      = nnls( Dic_i, M )
+    f0, kk      = nnls( Dic_i, M,maxiter=-1)
     SSE         = np.sum( (np.dot(Dic_i, f0) - M)**2 )
     # -----------------------
     m,n         = Dic_i.shape
@@ -217,7 +218,7 @@ def nnls_x2(Dic_i, M, Laplac, factor):
     M_aug1      = np.concatenate((M, Zerosm))
     # factor      = 1.02
     reg_opt     = fminbound(obj_nnls_x2, 0.0, 10.0, args=(Dic_i, Laplac, M_aug1, SSE, factor, M), xtol=1e-05, maxfun=300, full_output=0, disp=0)
-    f, rnorm_f  = nnls( np.concatenate((Dic_i, np.sqrt(reg_opt)*Laplac)), M_aug1 )
+    f, rnorm_f  = nnls( np.concatenate((Dic_i, np.sqrt(reg_opt)*Laplac)), M_aug1,maxiter=-1)
     #return f, reg_opt
     k_est       = np.sum( (np.dot(Dic_i, f) - M)**2 )/SSE
     return f, reg_opt, k_est
@@ -225,7 +226,7 @@ def nnls_x2(Dic_i, M, Laplac, factor):
 
 def obj_nnls_x2(x, D, L, Signal, SSE, factor, M):
     Daux     = np.concatenate((D, np.sqrt(x)*L))
-    f, kk    = nnls( Daux, Signal )
+    f, kk    = nnls( Daux, Signal,maxiter=-1 )
     #SSEr     = np.sum( (np.dot(Daux, f) - Signal)**2 )
     SSEr     = np.sum( (np.dot(D, f) - M)**2 )
     cost_fun = np.abs(SSEr - factor*SSE)/SSE
@@ -236,21 +237,21 @@ def obj_nnls_x2(x, D, L, Signal, SSE, factor, M):
 #                        X2 using an apriori estimate
 # ------------------------------------------------------------------------------
 def nnls_x2_prior(Dic_i, M, x0, factor):
-    f0, kk      = nnls( Dic_i, M )
+    f0, kk      = nnls( Dic_i, M,maxiter=-1)
     SSE         = np.sum( (np.dot(Dic_i, f0) - M)**2 )
     # -----------------------
     m,n         = Dic_i.shape
     Laplac      = np.eye(n)
     #factor      = 1.02
     reg_opt     = fminbound(obj_nnls_x2_prior, 0.0, 100.0, args=(Dic_i, Laplac, M, SSE, factor, x0), xtol=1e-05, maxfun=300, full_output=0, disp=0)
-    f, rnorm_f  = nnls( np.concatenate( (Dic_i, np.sqrt(reg_opt)*Laplac) ), np.concatenate( (M, np.sqrt(reg_opt)*x0) ) )
+    f, rnorm_f  = nnls( np.concatenate( (Dic_i, np.sqrt(reg_opt)*Laplac) ), np.concatenate( (M, np.sqrt(reg_opt)*x0) ),maxiter=-1)
     return f, reg_opt
 #end fun
 
 def obj_nnls_x2_prior(x, D, L, M, SSE, factor, x0):
     Daux     = np.concatenate( (D, np.sqrt(x) * L ) )
     Signal   = np.concatenate( (M, np.sqrt(x) * x0) )
-    f, kk    = nnls( Daux, Signal )
+    f, kk    = nnls( Daux, Signal,maxiter=-1)
     SSEr     = np.sum( (np.dot(Daux, f) - Signal)**2 )
     cost_fun = np.abs(SSEr - factor*SSE)/SSE
     return cost_fun
@@ -264,7 +265,7 @@ def nnls_tik(Dic_i, M, Laplac, reg_opt):
     Zerosm      = np.zeros((n))
     M_aug       = np.concatenate((M, Zerosm))
     # --------- Estimation
-    f, rnorm_f  = nnls( np.concatenate((Dic_i, np.sqrt(reg_opt)*Laplac)), M_aug )
+    f, rnorm_f  = nnls( np.concatenate((Dic_i, np.sqrt(reg_opt)*Laplac)), M_aug,maxiter=-1 )
     return f
 #end fun
 
@@ -278,13 +279,13 @@ def nnls_gcv(Dic_i, M, L):
     M_aug       = np.concatenate( (M, np.zeros((n))) )
     Im          = np.eye(m)
     reg_opt     = fminbound(obj_nnls_gcv, 1e-8, 10.0, args=(Dic_i, L, M_aug, m, Im), xtol=1e-05, maxfun=300, full_output=0, disp=0)
-    f, rnorm_f  = nnls( np.concatenate((Dic_i, np.sqrt(reg_opt)*L)), M_aug )
+    f, rnorm_f  = nnls( np.concatenate((Dic_i, np.sqrt(reg_opt)*L)), M_aug)
     return f, reg_opt
 #end fun
 
 def obj_nnls_gcv(x, D, L, Signal, m, Im):
     Daux     = np.concatenate((D, np.sqrt(x)*L))
-    f, SSEr  = nnls( Daux, Signal )
+    f, SSEr  = nnls( Daux, Signal)
     Dr       = D[:, f>0]
     Lr       = L[f>0, f>0]
     DTD      = np.matmul(Dr.T, Dr)

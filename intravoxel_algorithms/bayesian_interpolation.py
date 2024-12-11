@@ -32,7 +32,8 @@ import sys
 import os
 #sys.path.insert(1, os.path.dirname(inspect.getfile(scipy.optimize)))
 #import _nnls
-from scipy.optimize import _nnls,__nnls
+# from scipy.optimize import _nnls,__nnls
+from scipy.optimize import nnls
 
 #===============================================================================
 #                                FUNCTIONS
@@ -43,33 +44,33 @@ from scipy.optimize import _nnls,__nnls
 # the estimation of smooth solutions.
 # The "too many iterations" error was removed.
 
-def nnls(A, b):
-    A, b = map(np.asarray_chkfinite, (A, b))
+# def nnls(A, b):
+#     A, b = map(np.asarray_chkfinite, (A, b))
 
-    #if len(A.shape) != 2:
-    #    raise ValueError("expected matrix")
-    #if len(b.shape) != 1:
-    #    raise ValueError("expected vector")
+#     #if len(A.shape) != 2:
+#     #    raise ValueError("expected matrix")
+#     #if len(b.shape) != 1:
+#     #    raise ValueError("expected vector")
 
-    m, n = A.shape
+#     m, n = A.shape
 
-    #if m != b.shape[0]:
-    #    raise ValueError("incompatible dimensions")
+#     #if m != b.shape[0]:
+#     #    raise ValueError("incompatible dimensions")
 
-    #maxiter = -1 if maxiter is None else int(maxiter)
-    maxiter = -1
-    #maxiter = int(5*n)
+#     #maxiter = -1 if maxiter is None else int(maxiter)
+#     maxiter = -1
+#     #maxiter = int(5*n)
 
-    w     = np.zeros((n,), dtype=np.double)
-    zz    = np.zeros((m,), dtype=np.double)
-    index = np.zeros((n,), dtype=int)
+#     w     = np.zeros((n,), dtype=np.double)
+#     zz    = np.zeros((m,), dtype=np.double)
+#     index = np.zeros((n,), dtype=int)
 
-    #x, rnorm, mode = _nnls.nnls(A, m, n, b, w, zz, index, maxiter)
-    x, rnorm, mode = __nnls.nnls(A, m, n, b, w, zz, index, maxiter)
+#     #x, rnorm, mode = _nnls.nnls(A, m, n, b, w, zz, index, maxiter)
+#     x, rnorm, mode = nnls(A, m, n, b, w, zz, index, maxiter)
 
-    #if mode != 1:
-    #    raise RuntimeError("too many iterations")
-    return x, rnorm
+#     #if mode != 1:
+#     #    raise RuntimeError("too many iterations")
+#     return x, rnorm
 #end
 
 # ------------------------------------------------------------------------------
@@ -192,13 +193,13 @@ def compute_f_alpha_RNNLS_I_evidencelog_fast(Dic_i, M):
     B           = np.matmul(Dic_i.T, Dic_i)
     reg_sol     = fminbound(NNLSreg_obj_evidencelog_fast, 1e-8, 10.0, args=(Dic_i, In, M_aug, M, m, n, B, beta), xtol=1e-05, maxfun=200, full_output=0, disp=0)
     # --------- Estimation
-    f, rnorm_f  = nnls( np.concatenate((Dic_i, np.sqrt(reg_sol) * In)), M_aug )
+    f, rnorm_f  = nnls( np.concatenate((Dic_i, np.sqrt(reg_sol) * In)), M_aug)
     return f, reg_sol
 #end fun
 
 def NNLSreg_obj_evidencelog_fast(x, D, In, Signal_aug, Signal, m, n, B, beta):
     Daux       = np.concatenate((D, np.sqrt(x) * In))
-    f, kk      = nnls( Daux, Signal_aug )
+    f, kk      = nnls( Daux, Signal_aug)
     ED         = 0.5 * np.sum( (np.dot(D, f) - Signal)**2 )
     #EW         = 0.5 * np.sum ( np.dot(In, f)**2 )
     EW         = 0.5 * np.sum ( f**2 )
@@ -282,13 +283,13 @@ def compute_f_alpha_RNNLS_L_evidencelog_nn_fast(Dic_i, M, L):
     diag_UH     = np.diag(UH)
     reg_sol     = fminbound(NNLSreg_obj_evidencelog_nn_fast, 1e-8, 2.0, args=(Dic_i, L, M_aug, M, m, n, B, det_L, beta, K, UH, diag_UH, reg_0), xtol=1e-05, maxfun=100, full_output=0, disp=0)
     # --------- Estimation
-    f, rnorm_f  = nnls( np.concatenate((Dic_i, np.sqrt(reg_sol) * L)), M_aug )
+    f, rnorm_f  = nnls( np.concatenate((Dic_i, np.sqrt(reg_sol) * L)), M_aug)
     return f, reg_sol
 #end fun
 
 def NNLSreg_obj_evidencelog_nn_fast(x, D, L, Signal_aug, Signal, m, n, B, det_L, beta, K, UH, diag_UH, reg_0):
     Daux        = np.concatenate((D, np.sqrt(x) * L))
-    f, kk       = nnls( Daux, Signal_aug )
+    f, kk       = nnls( Daux, Signal_aug)
     ED          = 0.5 * np.sum( (np.dot(D, f) - Signal)**2 )
     EW          = 0.5 * np.sum ( np.dot(L, f)**2 )
     # -----------------------
@@ -330,13 +331,13 @@ def compute_f_alpha_RNNLS_L_evidencelog_nn_nnLikelihood(Dic_i, M, L):
     det_L       = det(L)
     reg_sol     = fminbound(NNLSreg_obj_evidencelog_nnLikelihood, 1e-8, 2.0, args=(Dic_i, L, M_aug, M, m, n, B, det_L, beta, K), xtol=1e-05, maxfun=100, full_output=0, disp=0)
     # --------- Estimation
-    f, rnorm_f  = nnls( np.concatenate((Dic_i, np.sqrt(reg_sol) * L)), M_aug )
+    f, rnorm_f  = nnls( np.concatenate((Dic_i, np.sqrt(reg_sol) * L)), M_aug)
     return f, reg_sol
 #end fun
 
 def NNLSreg_obj_evidencelog_nnLikelihood(x, D, L, Signal_aug, Signal, m, n, B, det_L, beta, K):
     Daux        = np.concatenate((D, np.sqrt(x) * L))
-    f, kk       = nnls( Daux, Signal_aug )
+    f, kk       = nnls( Daux, Signal_aug)
     ED          = 0.5 * np.sum( (np.dot(D, f) - Signal)**2 )
     EW          = 0.5 * np.sum ( np.dot(L, f)**2 )
     A           = beta*B + (beta*x)*K
@@ -387,7 +388,7 @@ def compute_f_alpha_RNNLS_I_evidencelog_fullbayes(Dic_3D, M):
         res     = minimize(NNLSreg_obj_evidencelog, x0, method = 'L-BFGS-B', options={'disp': False}, bounds = bnds, args=(Dic_i, In, M_aug, M, m, n, B))
         reg_sol = res.x
         # --------- Estimation
-        f, rnorm_f  = nnls( np.concatenate((Dic_i, np.sqrt(reg_sol[1]/reg_sol[0]) * In)), M_aug )
+        f, rnorm_f  = nnls( np.concatenate((Dic_i, np.sqrt(reg_sol[1]/reg_sol[0]) * In)), M_aug)
         x_sol[:,iter]   = f
         beta_sol[iter]  = reg_sol[0]
         alpha_sol[iter] = reg_sol[1]

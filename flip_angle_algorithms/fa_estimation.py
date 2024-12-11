@@ -77,7 +77,7 @@ def compute_optimal_FA(M, Dic_3D, alpha_values):
     M = np.ascontiguousarray(M)
     for iter in range(dim3):
         Dic_i          = np.ascontiguousarray(Dic_3D[:,:,iter])
-        f, rnorm_f     = nnls( Dic_i, M )
+        f, rnorm_f     = nnls( Dic_i, M,maxiter=-1 )
         residual[iter] = rnorm_f
     #end for
     index       = np.argmin(residual)

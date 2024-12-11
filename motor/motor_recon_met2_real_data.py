@@ -171,14 +171,20 @@ def motor_recon_met2(TE_array, path_to_data, path_to_mask, path_to_save_data, TR
     img_mask = nib.load(path_to_mask)
     mask     = img_mask.get_fdata()
     mask     = mask.astype(np.int64, copy=False)
+    mask = np.squeeze(mask,-1)
 
     print('--------- Data shape -----------------')
     nx, ny, nz, nt = data.shape
     print(data.shape)
     print('--------------------------------------')
 
+    print('--------- Mask shape -----------------')
+    # nx, ny, nz, nt = data.shape
+    print(mask.shape)
+    print('--------------------------------------')
+
     for c in range(nt):
-        data[:,:,:,c] = np.squeeze(data[:,:,:,c]) * mask
+        data[:,:,:,c] = data[:,:,:,c] * mask
     #end
 
     # Only for testing: selects a few slices
@@ -295,10 +301,10 @@ def motor_recon_met2(TE_array, path_to_data, path_to_mask, path_to_save_data, TR
         
         for voxelt in progressbar.progressbar(range(nt), redirect_stdout=True):
             print(voxelt+1, ' volumes processed')
-            data_vol  = np.squeeze(data[:,:,:,voxelt])
-            sigma_est = np.mean(estimate_sigma(data_vol, channel_axis=None))
+            data_vol  = data[:,:,:,voxelt]
+            sigma_est = np.mean(estimate_sigma(data_vol, multichannel=False)) # Modification multichannel
             #data[:,:,:,voxelt] = denoise_tv_chambolle(data_vol, weight=1.0*sigma_est, eps=0.0002, n_iter_max=200, multichannel=False)
-            data[:,:,:,voxelt] = denoise_tv_chambolle(data_vol, weight=2.0*sigma_est, eps=0.0002, max_num_iter=200, channel_axis=None)
+            data[:,:,:,voxelt] = denoise_tv_chambolle(data_vol, weight=2.0*sigma_est, eps=0.0002, n_iter_max=200, multichannel=False)
         #end for
         outImg = nib.Nifti1Image(data, img.affine)
         nib.save(outImg, path_to_save_data + 'Data_denoised.nii.gz')
@@ -314,7 +320,8 @@ def motor_recon_met2(TE_array, path_to_data, path_to_mask, path_to_save_data, TR
                 min_y = np.max([voxely - path_size[1], 0])
                 max_y = np.min([voxely + path_size[1], ny])
                 for voxelz in range(nz):
-                    if mask[voxelx, voxely,voxelz] == 1:
+                   if mask[voxelx, voxely,voxelz]  == 1: # Pour prendre en compte le mask spécial
+                    # if mask[voxelx, voxely,voxelz]  == 255: # Pour prendre en compte le mask spécial
                         min_z = np.max([voxelz - path_size[2], 0])
                         max_z = np.min([voxelz + path_size[2], nz])
                         # -----------------------------------------
@@ -339,7 +346,7 @@ def motor_recon_met2(TE_array, path_to_data, path_to_mask, path_to_save_data, TR
         data_smooth = np.zeros((nx,ny,nz,nt))
         sig_g = 2.0
         for c in range(nt):
-            data_smooth[:,:,:,c] = filt.gaussian_filter(np.squeeze(data[:,:,:,c]), sig_g, 0)
+            data_smooth[:,:,:,c] = filt.gaussian_filter(data[:,:,:,c], sig_g, 0)
         #end for
     else:
         data_smooth = data.copy()
@@ -379,10 +386,15 @@ def motor_recon_met2(TE_array, path_to_data, path_to_mask, path_to_save_data, TR
     total_signal = 0
     total_Kernel = 0
     nv           = 0
+    # print('# ------------------------------ #')
+    # print(data.shape)
+    # print('# ------------------------------ #\n')
+
     for voxelx in range(nx):
         for voxely in range(ny):
             for voxelz in range(nz):
                 if mask[voxelx, voxely,voxelz] == 1:
+                # if mask[voxelx, voxely,voxelz] == 255: # Because Recon
                     total_signal = total_signal + data[voxelx,voxely,voxelz, :]
                     ind_xyz      = np.int_(FA_index[voxelx,voxely,voxelz])
                     total_Kernel = total_Kernel + Dic_3D[:,:,ind_xyz]
