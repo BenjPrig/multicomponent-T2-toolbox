@@ -33,22 +33,19 @@ def plot_mean_spectrum_slices(path_to_save_data, path_to_mask, Slice, reg_method
     img_mask = nib.load(path_to_mask)
     mask     = img_mask.get_fdata()
     mask     = mask.astype(np.float64, copy=False)
-    mask = np.squeeze(mask)
-    mask = np.round(mask,0)
 
     mask2 = np.zeros_like(mask)
-    mask2[:,:] = mask[:,:]
+    mask2[:,:,Slice] = mask[:,:,Slice]
     mask = mask2
 
     ind_mask = mask == 1
-    # ind_mask = mask == 255
     print ('Plotting:', np.sum(ind_mask), 'T2 distributions')
-    _, _, _, nt = data.shape
+    nx, ny, nz, nt = data.shape
     fsol_2D        = np.zeros((np.sum(ind_mask), nt))
     T2s            = np.logspace(math.log10(10), math.log10(2000), num=nt, endpoint=True, base=10.0)
 
     for nti in range(nt):
-        data_i  = data[:,:,0,nti]
+        data_i  = data[:,:,:,nti]
         fsol_2D[:, nti] = data_i[ind_mask]
     #end
 

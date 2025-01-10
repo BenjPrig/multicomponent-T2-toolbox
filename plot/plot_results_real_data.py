@@ -227,4 +227,30 @@ def plot_real_data_slices(path_to_save_data, path_to_data, Slice, method):
     #plt.show()
     #fig2.show()
     #plt.close('all')
+    
+    fig3, axes = plt.subplots(nrows=1, ncols=2, figsize=(12,6),constrained_layout=True)
+    ax0, ax1 = axes.flatten()
+    im1 = ax0.imshow(fM[:,:,0].T, cmap='inferno', origin='upper', clim=(0,0.25))
+    ax0.set_title('MWF map',fontsize=20)
+    colorbar(im1)
+
+    x = fM[:,:,0].flatten()
+    x = x[x>0]
+    
+    bbox = dict(boxstyle='round', fc='blanchedalmond', ec='orange', alpha=0.8)
+    med = np.median(x)
+    mean = np.mean(x)
+    stats = (
+        f"mean = {mean:.2f}\n"
+        f"median ={med:.2f}"
+        )
+    ax1.hist(x, 50, density=1, facecolor='SkyBlue', alpha=1.0, range=[0, 0.4])
+    ax1.set_title('Histogram of MWF',fontsize=20)
+    ax1.set_xlabel('MWF',fontsize=20)
+    ax1.set_ylabel('Probability',fontsize=20)
+    ax1.text(0.7, 0.8, stats, transform=ax1.transAxes, fontsize=20,bbox=bbox)
+    ax1.grid(True)
+
+    plt.savefig(path_to_save_data + 'MWF_map_histo' + method + '.png',dpi=600)
+
 #end main function
