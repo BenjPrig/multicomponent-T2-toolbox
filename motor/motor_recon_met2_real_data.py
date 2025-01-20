@@ -220,8 +220,8 @@ def motor_recon_met2(TE_array, path_to_data, path_to_mask, path_to_save_data, TR
     # -----------
     T2m0   = 10.0
     T2mf   = myelin_T2
-    T2tf   = 200.0
-    T2csf  = 2000.0
+    T2tf   = 450.0
+    T2csf  = 900.0
 
     T2s     = np.logspace(math.log10(T2m0), math.log10(T2csf), num=Npc, endpoint=True, base=10.0)
 
@@ -320,8 +320,8 @@ def motor_recon_met2(TE_array, path_to_data, path_to_mask, path_to_save_data, TR
                 min_y = np.max([voxely - path_size[1], 0])
                 max_y = np.min([voxely + path_size[1], ny])
                 for voxelz in range(nz):
-                   if mask[voxelx, voxely,voxelz]  == 1: # Pour prendre en compte le mask spécial
-                    # if mask[voxelx, voxely,voxelz]  == 255: # Pour prendre en compte le mask spécial
+                #    if mask[voxelx, voxely,voxelz]  == 1: # Pour prendre en compte le mask spécial
+                    if mask[voxelx, voxely,voxelz]  == 255: # Pour prendre en compte le mask spécial
                         min_z = np.max([voxelz - path_size[2], 0])
                         max_z = np.min([voxelz + path_size[2], nz])
                         # -----------------------------------------
@@ -393,8 +393,8 @@ def motor_recon_met2(TE_array, path_to_data, path_to_mask, path_to_save_data, TR
     for voxelx in range(nx):
         for voxely in range(ny):
             for voxelz in range(nz):
-                if mask[voxelx, voxely,voxelz] == 1:
-                # if mask[voxelx, voxely,voxelz] == 255: # Because Recon
+                # if mask[voxelx, voxely,voxelz] == 1:
+                if mask[voxelx, voxely,voxelz] == 255: # Because Recon
                     total_signal = total_signal + data[voxelx,voxely,voxelz, :]
                     ind_xyz      = np.int_(FA_index[voxelx,voxely,voxelz])
                     total_Kernel = total_Kernel + Dic_3D[:,:,ind_xyz]
