@@ -5,9 +5,8 @@ import argparse
 import numpy as np
 from tabulate import tabulate
 
-from motor.motor_recon_met2_real_data import motor_recon_met2, obj1
-from plot.plot_results_real_data import plot_real_data_slices
-from plot.plot_mean_spectrum_slices import plot_mean_spectrum_slices
+import motor_test
+import plot.plot_results as plot
 
 import time
 import os
@@ -82,11 +81,13 @@ start_time = time.time()
 path_to_data      = path_to_folder + input_data
 path_to_mask      = path_to_folder + mask
 
-if reg_method == 'NNLS' or reg_method =='T2SPARC':
-    path_to_save_data = path_to_folder + 'recon_all_' + reg_method + '/'
-else:
-    path_to_save_data = path_to_folder + 'recon_all_' + reg_method +  '-'  + reg_matrix  +  '/'
-#end
+match reg_method:
+    case 'NNLS' | 'T2SPARC':
+        path_to_save_data = path_to_folder + 'recon_all_' + reg_method + '/'
+    case _:
+        path_to_save_data = path_to_folder + 'recon_all_' + reg_method +  '-'  + reg_matrix  +  '/'
+
+print(path_to_save_data)
 
 if reg_method == 'T2SPARC':
     reg_matrix = 'InvT2'
@@ -119,19 +120,13 @@ except:
 TE_array = TE_min * np.arange(1,nTE+1)
 TE_array = np.array(TE_array)
 
-motor_recon_met2(TE_array, path_to_data, path_to_mask, path_to_save_data, TR, reg_method, reg_matrix, denoise, FA_method, FA_smooth, myelin_T2_cutoff, num_cores)
+# motor_test.motor_recon_met2(TE_array, path_to_data, path_to_mask, path_to_save_data, 
+#                             reg_method, reg_matrix, denoise,TR, FA_method, FA_smooth, 
+#                             myelin_T2_cutoff, num_cores)
 
 # ----------- PLOT reconstructed maps and spectra for a given Slice ------------
 if savefig == 'yes':
-    plot_real_data_slices(path_to_save_data, path_to_data, Slice, reg_method)
-    try:
-        path_to_WM_mask = path_to_folder + 'Segmentation/Data_seg_pve_1.nii.gz'
-        plot_mean_spectrum_slices(path_to_save_data, path_to_WM_mask, Slice, reg_method)
-    except:
-        path_to_WM_mask = path_to_mask
-        plot_mean_spectrum_slices(path_to_save_data, path_to_WM_mask, Slice, reg_method)
-        #print ('Warning: WM mask (Data_seg_pve_1.nii.gz) not available for plotting the spectra ')
-    #end try
+    plot.plot_results(path_to_data, path_to_mask, Slice, reg_method, path_to_save_data)
 # end
 
-print("--- %s seconds ---" % (time.time() - start_time))
+print("--- %s seconds ---" % (np.round(time.time() - start_time)))

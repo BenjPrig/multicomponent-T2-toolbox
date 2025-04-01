@@ -15,6 +15,12 @@ warnings.filterwarnings("ignore",category=FutureWarning)
 import scipy
 
 def colorbar(mappable):
+    '''Function that do this
+
+    Parameters:
+
+    
+    '''
     ax = mappable.axes
     fig = ax.figure
     divider = make_axes_locatable(ax)
